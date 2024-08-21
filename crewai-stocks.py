@@ -1,22 +1,24 @@
-import json 
+# In[ ]:
+
+
+import json
 import os
-from datetime import datetime
-
 import yfinance as yf
-
+import streamlit as st
+from datetime import datetime
 from crewai import Agent, Task, Crew, Process
-
 from langchain.tools import Tool
 from langchain_openai import ChatOpenAI
 from langchain_community.tools import DuckDuckGoSearchResults
 
-import streamlit as st
+
+# In[15]:
+
 
 # Yahoo Finance Tool
 def fetch_stock_price(ticket):
   stock = yf.download(ticket, start="2023-08-08", end="2024-08-08")
   return stock
-
 
 yahoo_finance_tool = Tool(
   name = "Yahoo Finance Tool",
@@ -24,9 +26,20 @@ yahoo_finance_tool = Tool(
   func = lambda ticket: fetch_stock_price(ticket)
 )
 
-# IMPORTANDO OPENAI LLM - GPT
+
+# In[ ]:
+
+
+# IMPORTANDO OPENAI LLM - GPT - TESTS ONLY
+# API_KEY = "INSERT_API_KEY_HERE"
+# os.environ["OPENAI_API_KEY"] = API_KEY
+
+# FOR STREAMLIT DEPLOY (USE STREAMLIT VENV)
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+
+# In[ ]:
 
 
 # STOCK AGENT
@@ -45,7 +58,9 @@ stock_price_analyst = Agent(
   tools = [yahoo_finance_tool]  
 )
 
-# In[6]:
+
+# In[ ]:
+
 
 get_stock_price = Task(
   description = "Analyze the stock {ticket} price history and create a projection trend",
@@ -57,7 +72,7 @@ get_stock_price = Task(
 )
 
 
-# In[7]:
+# In[ ]:
 
 
 # Search Tool
@@ -67,7 +82,7 @@ search_tool = DuckDuckGoSearchResults(
 )
 
 
-# In[8]:
+# In[ ]:
 
 
 # NEWS AGENT
@@ -92,7 +107,7 @@ news_analyst = Agent(
 )
 
 
-# In[9]:
+# In[ ]:
 
 
 get_news = Task(
@@ -116,7 +131,7 @@ get_news = Task(
 )
 
 
-# In[10]:
+# In[ ]:
 
 
 # HEAD OF ANALYSIS AGENT
@@ -139,7 +154,7 @@ head_of_analysis = Agent(
 )
 
 
-# In[11]:
+# In[ ]:
 
 
 write_analysis = Task(
@@ -162,7 +177,7 @@ write_analysis = Task(
 )
 
 
-# In[12]:
+# In[ ]:
 
 
 crew = Crew(
@@ -176,19 +191,24 @@ crew = Crew(
   max_iter = 15
 )
 
-# results= crew.kickoff(inputs={'ticket': 'AAPL})
+
+# In[ ]:
+
 
 with st.sidebar:
-  st.header('Enter the Stock to Research')
+  st.header("Enter the stock to be researched")
 
-  with st.form(key='research_form'):
+  with st.form(key="research_form"):
     topic = st.text_input("Select the stock")
     submit_button = st.form_submit_button(label = "Run Research")
+
 if submit_button:
   if not topic:
-    st.error("Please fill the stock field")
+    st.error("Please, fill the stock field")
   else:
-    results= crew.kickoff(inputs={'ticket': topic})
+    results = crew.kickoff(inputs={
+      "ticket": topic
+    })
 
     st.subheader("Results of research:")
-    st.write(results['final_output'])
+    st.write(results["final_output"])
